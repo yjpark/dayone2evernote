@@ -43,7 +43,7 @@ def process_entries(entries, entries_path, date_only=None):
     for f in glob.glob(os.path.join(entries_path, '*.doentry')):
         pl = plistlib.readPlist(f)
         t = get_entry_date(pl['Creation Date'], pl['Time Zone'])
-        d = '%4d-%02d-%02d' % (t.year, t.month, t.day)
+        d = '%04d-%02d-%02d' % (t.year, t.month, t.day)
         if date_only is not None:
             if d != date_only:
                 continue
@@ -68,8 +68,26 @@ def export_all(entries, entries_path):
     process_entries(entries, entries_path)
 
 def export_one(entries, entries_path, year, month, day):
-    d = '%4d-%02d-%02d' % (int(year), int(month), int(day))
+    d = '%04d-%02d-%02d' % (int(year), int(month), int(day))
     process_entries(entries, entries_path, date_only=d)
+
+def save_evernote_note(notebook, datestr, title, text):
+    text = text.encode('utf8')
+    text = text.replace('"', "'")
+    text = text.replace('$', '\\$')
+    text = text.replace('`', '\\`')
+    path = os.path.dirname(os.path.realpath(__file__))
+    cmd = '%s/save-note.applescript "%s" "%s" "%s" "%s"' % (path, notebook, datestr, title, text)
+    info('Saving %s -> %s' % (datestr, notebook))
+    #info(cmd)
+    return_code = os.system(cmd)
+    if return_code != 0:
+        info_line()
+        info(cmd)
+
+def save_evernote_notes(notes, notebook):
+    for datestr in notes:
+        save_evernote_note(notebook, datestr, datestr, notes[datestr])
 
 def main():
     parser = argparse.ArgumentParser()
@@ -100,7 +118,7 @@ def main():
 
     if args.test:
         for d in evernote_notes:
-            info_line()
+            info('==========================================================================')
             info(d)
             info_line()
             info(evernote_notes[d])
