@@ -29,7 +29,7 @@ def check_args(args):
     if not args.test and not args.evernote_note_book:
         info('Need to provide the notebook name that you want to export')
         sys.exit(2)
-    if not args.all and (not args.year or not args.month or not args.day):
+    if not args.all and not args.new and (not args.year or not args.month or not args.day):
         info('Need to provide the year, month, and day that you want to export')
         sys.exit(2)
 
@@ -39,14 +39,13 @@ def get_entry_date(creation_date, time_zone):
     #info('%s, %s -> %s, %d, %d' % (creation_date, time_zone, result, result.hour, result.minute))
     return result
 
-def process_entries(entries, entries_path, date_only=None):
+def process_entries(entries, entries_path, filter_func):
     for f in glob.glob(os.path.join(entries_path, '*.doentry')):
         pl = plistlib.readPlist(f)
         t = get_entry_date(pl['Creation Date'], pl['Time Zone'])
         d = '%04d-%02d-%02d' % (t.year, t.month, t.day)
-        if date_only is not None:
-            if d != date_only:
-                continue
+        if not filter_func(t):
+            continue
         day_entries = entries.get(d)
         if day_entries is None:
             day_entries = {} 
@@ -65,11 +64,39 @@ def convert(entries):
     return note
 
 def export_all(entries, entries_path):
-    process_entries(entries, entries_path)
+    def all_filter(t):
+        return true
+    process_entries(entries, entries_path, all_filter)
+
+def export_new(entries, entries_path):
+    now = datetime.datetime.now()
+    path = os.path.dirname(__file__) #not using realpath here, since want to keep the last file with symlink
+    f = open(path + '/dayone2evernote.last')
+    datestr = f.readline()
+    f.close()
+    year = int(datestr.split('-')[0])
+    month = int(datestr.split('-')[1])
+    day = int(datestr.split('-')[2])
+    info('Last processed date is: %s' % datestr)
+    def new_filter(t):
+        return t.year >= year and t.month >= month and t.day >= day and \
+               t.year <= now.year and t.month <= now.month and t.day < now.day
+    process_entries(entries, entries_path, new_filter)
+    return '%04d-%02d-%02d' % (now.year, now.month, now.day)
 
 def export_one(entries, entries_path, year, month, day):
-    d = '%04d-%02d-%02d' % (int(year), int(month), int(day))
-    process_entries(entries, entries_path, date_only=d)
+    datestr = '%04d-%02d-%02d' % (int(year), int(month), int(day))
+    def one_filter(t):
+        d = '%04d-%02d-%02d' % (t.year, t.month, t.day)
+        return d == datestr
+    process_entries(entries, entries_path, one_filter) 
+
+def save_last_date(datestr):
+    path = os.path.dirname(__file__) #not using realpath here, since want to keep the last file with symlink
+    f = open(path + '/dayone2evernote.last', 'w')
+    f.write(datestr + '\n')
+    f.close()
+    info('Save last processed date as: %s' % datestr)
 
 def save_evernote_note(notebook, datestr, title, text):
     text = text.encode('utf8')
@@ -79,7 +106,6 @@ def save_evernote_note(notebook, datestr, title, text):
     path = os.path.dirname(os.path.realpath(__file__))
     cmd = '%s/save-note.applescript "%s" "%s" "%s" "%s"' % (path, notebook, datestr, title, text)
     info('Saving %s -> %s' % (datestr, notebook))
-    #info(cmd)
     return_code = os.system(cmd)
     if return_code != 0:
         info_line()
@@ -99,6 +125,7 @@ def main():
     parser.add_argument('-d', '--day')
 
     parser.add_argument('-a', '--all', action='store_true', help='export ALL entries')
+    parser.add_argument('-n', '--new', action='store_true', help='export NEW entries')
 
     parser.add_argument('-t', '--test', action='store_true', help='Test only (don not create note in evernote)')
 
@@ -107,8 +134,11 @@ def main():
     check_args(args)
 
     day_one_entries = {}
+    nowstr = ''
     if args.all:
         export_all(day_one_entries, args.day_one_entries_path)
+    elif args.new:
+        nowstr = export_new(day_one_entries, args.day_one_entries_path)
     else:
         export_one(day_one_entries, args.day_one_entries_path, args.year, args.month, args.day)
 
@@ -124,6 +154,8 @@ def main():
             info(evernote_notes[d])
     else:
         save_evernote_notes(evernote_notes, args.evernote_note_book)
+        if args.new:
+            save_last_date(nowstr)
 
 if __name__ == '__main__':
     main()
