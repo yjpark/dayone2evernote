@@ -1,0 +1,4 @@
+#!/bin/bash
+
+dayone2evernote -i ~/Dropbox/Apps/Day\ One/Journal.dayone/entries/ -b DayOne -n $@
+

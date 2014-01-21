@@ -26,7 +26,7 @@ def check_args(args):
     if not args.day_one_entries_path:
         info('Need to provide the path of Day One\'s entries')
         sys.exit(2)
-    if not args.test and not args.evernote_note_book:
+    if args.save and not args.evernote_note_book:
         info('Need to provide the notebook name that you want to export')
         sys.exit(2)
     if not args.all and not args.new and (not args.year or not args.month or not args.day):
@@ -65,7 +65,7 @@ def convert(entries):
 
 def export_all(entries, entries_path):
     def all_filter(t):
-        return true
+        return True
     process_entries(entries, entries_path, all_filter)
 
 def export_new(entries, entries_path):
@@ -127,7 +127,7 @@ def main():
     parser.add_argument('-a', '--all', action='store_true', help='export ALL entries')
     parser.add_argument('-n', '--new', action='store_true', help='export NEW entries')
 
-    parser.add_argument('-t', '--test', action='store_true', help='Test only (don not create note in evernote)')
+    parser.add_argument('-s', '--save', action='store_true', help='Save to Evernote')
 
     args = parser.parse_args()
 
@@ -146,16 +146,16 @@ def main():
     for day in day_one_entries:
         evernote_notes[day] = convert(day_one_entries[day])
 
-    if args.test:
+    if args.save:
+        save_evernote_notes(evernote_notes, args.evernote_note_book)
+        if args.new:
+            save_last_date(nowstr)
+    else:
         for d in evernote_notes:
             info('==========================================================================')
             info(d)
             info_line()
             info(evernote_notes[d])
-    else:
-        save_evernote_notes(evernote_notes, args.evernote_note_book)
-        if args.new:
-            save_last_date(nowstr)
 
 if __name__ == '__main__':
     main()
