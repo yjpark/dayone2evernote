@@ -1,9 +1,23 @@
 dayone2evernote
 ===============
 
-Export Day One entries into Evernote
+Export Day One entries into Evernote as daily summaries. The summaries are plain text, only text content been included. The generated notes will look like:
+
+```
+[00:25]
+One note written in Day One
+
+[19:17]
+Another note in Day One
+
+...
+```
 
 Original blog post: http://blog.yjpark.org/blog/2014/01/21/save-day-one-summary-to-evernote/
+
+System Requirement
+------------------
+Since the note is saved through applescript, only work on OSX and need to have Evernote installed.
 
 Usage
 -----
