@@ -28,4 +28,4 @@ Notes:
 - Without ```--save``` parameter, nothing will be added to evernote, and the notes will be printed to stdout, so you can have a check before actually save it.
 - For the ```--new``` way to work, you need to create a ```dayone2evernote.last``` file at the same place with ```dayone2evernote```, the last date will be saved to that file, note that today's notes will be exported tomorrow, also if you use multiple devices, please make sure the syncing is done.
 - If you use symlink to link ```dayone2evernote``` to path, then the ```dayone2evernote.last``` file should be put with the folder holding the link, this is by design.
-- If you run export on multiple machines, please make sure the ```dayone2evernote.last``` filse is synchronized somehow, otherwise same notes might be created more than once.
+- If you run export on multiple machines, please make sure the ```dayone2evernote.last``` file is synchronized somehow, otherwise same notes might be created more than once.
