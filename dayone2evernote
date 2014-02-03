@@ -43,9 +43,10 @@ def process_entries(entries, entries_path, filter_func):
     for f in glob.glob(os.path.join(entries_path, '*.doentry')):
         pl = plistlib.readPlist(f)
         t = get_entry_date(pl['Creation Date'], pl['Time Zone'])
-        d = '%04d-%02d-%02d' % (t.year, t.month, t.day)
         if not filter_func(t):
             continue
+        d = '%04d-%02d-%02d' % (t.year, t.month, t.day)
+        info('Process Entry: %s, %s' % (t, d))
         day_entries = entries.get(d)
         if day_entries is None:
             day_entries = {} 
@@ -68,6 +69,21 @@ def export_all(entries, entries_path):
         return True
     process_entries(entries, entries_path, all_filter)
 
+def earlier_date(y1, m1, d1, y2, m2, d2, allow_same_day):
+    if y1 < y2:
+        return True
+    elif y1 > y2:
+        return False
+    if m1 < m2:
+        return True
+    elif m1 > m2:
+        return False
+    if d1 < d2:
+        return True
+    elif d1 > d2:
+        return False
+    return allow_same_day
+
 def export_new(entries, entries_path):
     now = datetime.datetime.now()
     path = os.path.dirname(__file__) #not using realpath here, since want to keep the last file with symlink
@@ -78,9 +94,11 @@ def export_new(entries, entries_path):
     month = int(datestr.split('-')[1])
     day = int(datestr.split('-')[2])
     info('Last processed date is: %s' % datestr)
+
     def new_filter(t):
-        return t.year >= year and t.month >= month and t.day >= day and \
-               t.year <= now.year and t.month <= now.month and t.day < now.day
+        return earlier_date(year, month, day, t.year, t.month, t.day, True) and \
+               earlier_date(t.year, t.month, t.day, now.year, now.month, now.day, False)
+
     process_entries(entries, entries_path, new_filter)
     return '%04d-%02d-%02d' % (now.year, now.month, now.day)
 
