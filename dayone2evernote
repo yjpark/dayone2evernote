@@ -42,6 +42,16 @@ def get_entry_date(creation_date, time_zone):
 def process_entries(entries, entries_path, filter_func):
     for f in glob.glob(os.path.join(entries_path, '*.doentry')):
         pl = plistlib.readPlist(f)
+        if not hasattr(pl, 'Creation Date'):
+            info('Invalid Entry: "Creation Date" Not Found: %s' % f)
+            continue
+        if not hasattr(pl, 'Time Zone'):
+            info('Invalid Entry: "Time Zone" Not Found: %s' % f)
+            continue
+        if not hasattr(pl, 'Entry Text'):
+            info('Invalid Entry: "Entry Text" Not Found: %s' % f)
+            continue
+
         t = get_entry_date(pl['Creation Date'], pl['Time Zone'])
         if not filter_func(t):
             continue
